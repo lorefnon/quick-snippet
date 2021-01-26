@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack://node_modules/codemirror/theme/ambiance-mobile.css"],"names":[],"mappings":"AAAA,0BAGE,eACF","file":"23.5fbc43f8.chunk.css","sourcesContent":[".cm-s-ambiance.CodeMirror {\n  -webkit-box-shadow: none;\n  -moz-box-shadow: none;\n  box-shadow: none;\n}\n"]}
