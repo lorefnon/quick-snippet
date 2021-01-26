@@ -27,6 +27,7 @@ export default function ThemeSelect(props: ThemeSelectProps) {
       }}
       itemRenderer={(item, itemProps) => (
         <MenuItem
+          key={item}
           text={capitalize(getTheme(item))}
           onClick={itemProps.handleClick}
         />

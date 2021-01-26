@@ -1,7 +1,27 @@
+import React, {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import uniqueId from "lodash/uniqueId";
+import { defaultSettings, EditorSettings } from "./settings";
+import { extractHash } from "./utils/url";
+import { applySettings } from "./utils/codemirror";
 import { style } from "typestyle";
 import cc from "classcat";
 import Split from "@uiw/react-split";
-import { Navbar, Alignment, Button, Intent, AnchorButton } from "@blueprintjs/core";
+import {
+  Navbar,
+  Alignment,
+  Button,
+  Intent,
+  AnchorButton,
+  NonIdealState,
+  Spinner,
+} from "@blueprintjs/core";
 import CodeMirror from "@uiw/react-codemirror";
 import html2canvas from "html2canvas";
 import { IconNames } from "@blueprintjs/icons";
@@ -9,14 +29,9 @@ import { IconNames } from "@blueprintjs/icons";
 import "codemirror/keymap/sublime";
 import "codemirror/theme/monokai.css";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import PreviewDialog from "./PreviewDialog";
-import uniqueId from "lodash/uniqueId";
-import SettingsPanel from "./SettingsPanel";
-import { defaultSettings, EditorSettings } from "./settings";
-import { extractHash } from "./utils/url";
-import PermalinkDialog from "./PermalinkDialog";
-import { applySettings } from "./utils/codemirror";
+const PreviewDialog = lazy(() => import("./PreviewDialog"));
+const SettingsPanel = lazy(() => import("./SettingsPanel"));
+const PermalinkDialog = lazy(() => import("./PermalinkDialog"));
 
 const defaultCodeContent = `
 // Enter code snippet here
@@ -61,16 +76,29 @@ function App() {
       if (!component) return;
       const { editor } = component;
       if (!editor) return;
-      applySettings(editor, settings);
+      applySettings(editor, settings, setSettings);
     },
     [settings]
   );
 
   const editor = (
     <div
-      className={cc([editorContainer, "CodeMirror", `cm-s-${settings.theme}`])}
+      className={cc([
+        editorContainer,
+        // We don't want codemirror to take the full size of the container
+        // because that causes generated images have unnecessary trailing whitespace
+        //
+        // So instead, we take a simpler route and make the editor auto-expand.
+        // And add the same class codemirror themes use to set background color
+        // to get a uniform background
+        "CodeMirror",
+        `cm-s-${settings.theme}`,
+      ])}
       key={editorKey}
       ref={editorContainerRef}
+      onClick={() => {
+        cmRef.current?.editor?.focus();
+      }}
     >
       <CodeMirror
         ref={handleEditorInstance}
@@ -95,7 +123,19 @@ function App() {
     <Split style={{ height: "100%", width: "100%" }}>
       <div style={{ width: "calc(100% - 250px)" }}>{editor}</div>
       <div style={{ minWidth: "250px" }}>
-        <SettingsPanel defaultSettings={settings} onSubmit={(settings) => setSettings(settings)} />
+        <Suspense fallback={
+          <NonIdealState 
+            icon={
+              <Spinner />
+            }
+            title={"Loading..."}
+          />
+        }>
+          <SettingsPanel
+            defaultSettings={settings}
+            onSubmit={(settings) => setSettings(settings)}
+          />
+        </Suspense>
       </div>
     </Split>
   ) : (
@@ -127,7 +167,12 @@ function App() {
       <Navbar fixedToTop className="bp3-dark">
         <Navbar.Group align={Alignment.LEFT}>
           <Navbar.Heading>Quick Snippet</Navbar.Heading>
-          <AnchorButton icon={IconNames.HOME} text="About" href={"https://github.com/lorefnon/quick-snippet"} target="_blank" />
+          <AnchorButton
+            icon={IconNames.HOME}
+            text="About"
+            href={"https://github.com/lorefnon/quick-snippet#quick-snippet"}
+            target="_blank"
+          />
         </Navbar.Group>
         <Navbar.Group align={Alignment.RIGHT}>
           <Navbar.Divider />
@@ -167,7 +212,7 @@ function App() {
         </Navbar.Group>
       </Navbar>
       <div className={topLevelContainer}>
-        {dialog}
+        <Suspense fallback={null}>{dialog}</Suspense>
         <div className={appBody}>{body}</div>
       </div>
     </>

@@ -27,6 +27,7 @@ export default function LangSelect(props: LangSelectProps) {
       }}
       itemRenderer={(item, itemProps) => (
         <MenuItem
+          key={item}
           text={capitalize(getMode(item))}
           onClick={itemProps.handleClick}
         />

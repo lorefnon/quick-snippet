@@ -1,7 +1,11 @@
 import { style } from "typestyle";
 import { EditorSettings } from "../settings";
 
-export function applySettings(editor: CodeMirror.Editor, settings: EditorSettings) {
+export function applySettings(
+    editor: CodeMirror.Editor, 
+    settings: EditorSettings, 
+    onSettingsChange: React.Dispatch<React.SetStateAction<EditorSettings>>
+) {
     const doc = editor.getDoc();
     if (!doc) return;
     for (const entry of settings!.lineHighlights) {
@@ -23,15 +27,20 @@ export function applySettings(editor: CodeMirror.Editor, settings: EditorSetting
         }
         const widgetNode = document.createElement("div");
         widgetNode.setAttribute("class", widgetContainer);
+        widgetNode.addEventListener("click", () => {
+            onSettingsChange(oldSettings => ({
+                ...oldSettings,
+                folds: oldSettings.folds.filter(f => f.id !== entry.id)
+            }));
+        })
         doc.addLineWidget(end - 1, widgetNode);
         const summary = entry.summary ? `(${entry.summary})` : "";
         widgetNode.innerHTML = `
-        <div class="${dottedLining}">
-        </div>
-        <div class="${collapsedInfoLabel}">
-          ${end - start + 1} lines collapsed ${summary}
-        </div>
-      `;
+            <div class="${dottedLining}">
+            </div>
+            <div class="${collapsedInfoLabel}">
+            ${end - start + 1} lines collapsed ${summary}
+            </div>`;
     }
 }
 
@@ -49,7 +58,7 @@ const collapsedInfoLabel = style({
     display: "inline-block",
     background: "#565454",
     padding: "0.2rem 1rem",
-    borderRadius: "20px",
+    borderRadius: "20px !important",
     margin: ".2rem",
 });
 
@@ -66,4 +75,5 @@ const dottedLining = style({
 const widgetContainer = style({
     position: "relative",
     paddingLeft: "1rem",
+    cursor: "pointer"
 });

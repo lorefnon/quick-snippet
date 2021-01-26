@@ -5,7 +5,6 @@ import {
   InputGroup,
   Icon,
   Tag,
-  AnchorButton,
 } from "@blueprintjs/core";
 import cc from "classcat";
 import { useState } from "react";
@@ -15,30 +14,38 @@ import ThemeSelect from "./ThemeSelect";
 import { IconNames } from "@blueprintjs/icons";
 import { style } from "typestyle";
 import Panel, { panelHeader } from "./Panel";
-import { EditorSettings, LineRange, newFoldId, newHighlightId } from "./settings";
-
+import {
+  EditorSettings,
+  LineRange,
+  newFoldId,
+  newHighlightId,
+} from "./settings";
+import { SketchPicker } from "react-color";
+import { Popover2 as Popover } from "@blueprintjs/popover2";
 interface SettingsPanelProps {
   defaultSettings: EditorSettings;
   classNames?: {
     container?: string;
-  },
+  };
   onSubmit: (settings: EditorSettings) => void;
 }
 
 export default function SettingsPanel(props: SettingsPanelProps) {
-  const [settings, setSettings] = useState<EditorSettings>(props.defaultSettings);
+  const [settings, setSettings] = useState<EditorSettings>(
+    props.defaultSettings
+  );
 
   return (
     <div className={settingsContainer}>
       <div className={panelHeader}>Settings</div>
       <div className={settingsInnerContainer}>
         <div className={itemGroupRow}>
-          <FormGroup label="Language" style={{ marginRight: "0.5rem" }}>
+          <FormGroup label="Language" style={{ marginRight: "1rem" }}>
             <LangSelect
               mode={settings.mode}
               onChange={(mode) =>
-                setSettings((s) => ({
-                  ...s,
+                setSettings((prevSettings) => ({
+                  ...prevSettings,
                   mode,
                 }))
               }
@@ -48,8 +55,8 @@ export default function SettingsPanel(props: SettingsPanelProps) {
             <ThemeSelect
               mode={settings.theme}
               onChange={(theme) =>
-                setSettings((s) => ({
-                  ...s,
+                setSettings((prevSettings) => ({
+                  ...prevSettings,
                   theme,
                 }))
               }
@@ -58,35 +65,91 @@ export default function SettingsPanel(props: SettingsPanelProps) {
         </div>
         <Checkbox
           checked={settings.showLineNumbers}
-          onChange={(e) => {
-            const showLineNumbers = e.currentTarget.checked;
-            setSettings((s) => ({ ...s, showLineNumbers }));
+          onChange={(event) => {
+            const showLineNumbers = event.currentTarget.checked;
+            setSettings((prevSettings) => ({
+              ...prevSettings,
+              showLineNumbers,
+            }));
           }}
         >
           Show Line Numbers
         </Checkbox>
 
         <Panel header={"Highlighted ranges"}>
-          {settings.lineHighlights.map((h, idx) => (
-            <div key={h.id}>
-              <InputGroup
-                placeholder="Eg, 1-2"
-                leftElement={<Tag minimal>Lines</Tag>}
-                style={{
-                  marginBottom: "0.5rem",
-                }}
-                onChange={(e) => {
-                  const { value } = e.target;
-                  setSettings((s) => ({
-                    ...s,
-                    lineHighlights: s.lineHighlights.map((hItem) =>
-                      hItem.id === h.id
-                        ? { ...hItem, range: parseRange(value) }
-                        : hItem
-                    ),
-                  }));
-                }}
-              />
+          {settings.lineHighlights.map((currentHighlightItem, idx) => (
+            <div key={currentHighlightItem.id}>
+              <div className={itemGroupRow}>
+                <div className={itemGroupControl}>
+                  <InputGroup
+                    placeholder="Eg, 1-2"
+                    leftElement={<Tag minimal>Lines</Tag>}
+                    style={{
+                      marginBottom: "0.5rem",
+                    }}
+                    onChange={(e) => {
+                      const { value } = e.target;
+                      setSettings((prevSettings) => ({
+                        ...prevSettings,
+                        lineHighlights: prevSettings.lineHighlights.map(
+                          (hItem) =>
+                            hItem.id === currentHighlightItem.id
+                              ? { ...hItem, range: parseRange(value) }
+                              : hItem
+                        ),
+                      }));
+                    }}
+                    rightElement={
+                      <Popover
+                        content={
+                          <SketchPicker
+                            color={currentHighlightItem.background}
+                            styles={{
+                              default: {
+                                picker: {
+                                  background: "rgb(102 113 121)",
+                                },
+                              },
+                            }}
+                            onChangeComplete={(e) => {
+                              setSettings((prevSettings) => ({
+                                ...prevSettings,
+                                lineHighlights: prevSettings.lineHighlights.map(
+                                  (hItem) =>
+                                    hItem.id === currentHighlightItem.id
+                                      ? { ...hItem, background: e.hex }
+                                      : hItem
+                                ),
+                              }));
+                            }}
+                          />
+                        }
+                      >
+                        <Button minimal>
+                          <Icon icon={IconNames.EYE_OPEN} />
+                        </Button>
+                      </Popover>
+                    }
+                  />
+                </div>
+                {settings.lineHighlights.length > 1 && (
+                  <div className={itemGroupCloser}>
+                    <Button
+                      minimal
+                      onClick={() => {
+                        setSettings((prevSettings) => ({
+                          ...prevSettings,
+                          lineHighlights: prevSettings.lineHighlights.filter(
+                            (item) => item.id !== currentHighlightItem.id
+                          ),
+                        }));
+                      }}
+                    >
+                      <Icon icon={IconNames.CROSS} />
+                    </Button>
+                  </div>
+                )}
+              </div>
               {idx === settings.lineHighlights.length - 1 && (
                 <div className={itemGroupRow}>
                   <Button>
@@ -104,7 +167,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                       }}
                     />
                   </Button>
-                  <div style={{flexGrow: 1}} />
+                  <div style={{ flexGrow: 1 }} />
                   <small className={subText}>(Both ends are inclusive)</small>
                 </div>
               )}
@@ -113,8 +176,8 @@ export default function SettingsPanel(props: SettingsPanelProps) {
         </Panel>
         <br />
         <Panel header="Collapsed ranges">
-          {settings.folds.map((fold, idx) => (
-            <div key={fold.id}>
+          {settings.folds.map((currentFoldItem, idx) => (
+            <div key={currentFoldItem.id}>
               <div className={itemGroupRow}>
                 <div className={itemGroupControl}>
                   <InputGroup
@@ -128,7 +191,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                       setSettings((s) => ({
                         ...s,
                         folds: s.folds.map((foldItem) =>
-                          foldItem.id === fold.id
+                          foldItem.id === currentFoldItem.id
                             ? { ...foldItem, range: parseRange(value) }
                             : foldItem
                         ),
@@ -146,7 +209,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                       setSettings((s) => ({
                         ...s,
                         folds: s.folds.map((foldItem) =>
-                          foldItem.id === fold.id
+                          foldItem.id === currentFoldItem.id
                             ? { ...foldItem, summary: value }
                             : foldItem
                         ),
@@ -154,11 +217,23 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                     }}
                   />
                 </div>
-                <div className={itemGroupCloser}>
-                  <AnchorButton minimal>
-                    <Icon icon={IconNames.CROSS} />
-                  </AnchorButton>
-                </div>
+                {settings.folds.length > 1 && (
+                  <div className={itemGroupCloser}>
+                    <Button
+                      minimal
+                      onClick={() => {
+                        setSettings((prevSettings) => ({
+                          ...prevSettings,
+                          folds: prevSettings.folds.filter(
+                            (foldItem) => foldItem.id !== currentFoldItem.id
+                          ),
+                        }));
+                      }}
+                    >
+                      <Icon icon={IconNames.CROSS} />
+                    </Button>
+                  </div>
+                )}
               </div>
               {idx < settings.folds.length - 1 && (
                 <div className={formGroupSeparator} />
@@ -169,9 +244,9 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                     <Icon
                       icon={IconNames.ADD}
                       onClick={() => {
-                        setSettings((s) => ({
-                          ...s,
-                          folds: s.folds.concat({
+                        setSettings((prevSettings) => ({
+                          ...prevSettings,
+                          folds: prevSettings.folds.concat({
                             summary: null,
                             range: null,
                             id: newFoldId(),
@@ -180,7 +255,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                       }}
                     />
                   </Button>
-                  <div style={{flexGrow: 1}} />
+                  <div style={{ flexGrow: 1 }} />
                   <small className={subText}>(Both ends are inclusive)</small>
                 </div>
               )}
@@ -222,13 +297,16 @@ function parseRange(value: string): LineRange | null {
   return null;
 }
 
-const settingsContainer = cc(["bp3-dark", style({
-  height: "100%",
-  overflow: "hidden",
-  display: "flex",
-  flexDirection: "column",
-  background: "#323c44"
-})]);
+const settingsContainer = cc([
+  "bp3-dark",
+  style({
+    height: "100%",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    background: "#323c44",
+  }),
+]);
 
 const settingsInnerContainer = style({
   overflow: "auto",
@@ -263,5 +341,5 @@ const itemGroupCloser = style({
 });
 
 const subText = style({
-  color: "rgba(255, 255, 255, 0.5)"
+  color: "rgba(255, 255, 255, 0.5)",
 });
