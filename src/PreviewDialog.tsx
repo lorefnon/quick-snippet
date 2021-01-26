@@ -19,13 +19,17 @@ export default function PreviewDialog(props: PreviewPopupProps) {
     }
     el.appendChild(props.canvas);
   };
+
   const [dataURI, setDataURI] = useState<string | null>(null);
-  useEffect(() => {
+  
+  useEffect(function updateDataURI() {
     setDataURI(props.canvas.toDataURL());
   }, [props.canvas]);
+
   const [includePermalinkInMd, setIncludePermalinkInMd] = useState<boolean>(
     true
   );
+
   const mdContent = useMemo(function computeMarkdownContent() {
     const img = `![Code Snippet](${dataURI})`;
     if (includePermalinkInMd)
@@ -34,7 +38,7 @@ export default function PreviewDialog(props: PreviewPopupProps) {
         settings: props.settings,
       })}`;
     return img;
-  }, [includePermalinkInMd, props.settings, props.code]);
+  }, [includePermalinkInMd, dataURI, props.settings, props.code]);
 
   return (
     <Dialog

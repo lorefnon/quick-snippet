@@ -8,41 +8,17 @@ import {
   AnchorButton,
 } from "@blueprintjs/core";
 import cc from "classcat";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import LangSelect from "./LangSelect";
 import toNumber from "lodash/toNumber";
 import ThemeSelect from "./ThemeSelect";
-import { StringParam, useQueryParam } from "use-query-params";
 import { IconNames } from "@blueprintjs/icons";
-import { uniqueId } from "lodash";
 import { style } from "typestyle";
 import Panel, { panelHeader } from "./Panel";
-import { EditorSettings, LineRange } from "./settings";
-
-const newFoldId = () => uniqueId("editor-fold-");
-const newHighlightId = () => uniqueId("editor-highlight-");
-
-export const defaultSettings: EditorSettings = {
-  mode: "jsx",
-  theme: "monokai",
-  showLineNumbers: true,
-  lineHighlights: [
-    {
-      id: newHighlightId(),
-      background: "black",
-      range: null,
-    },
-  ],
-  folds: [
-    {
-      id: newFoldId(),
-      summary: null,
-      range: null,
-    },
-  ],
-};
+import { EditorSettings, LineRange, newFoldId, newHighlightId } from "./settings";
 
 interface SettingsPanelProps {
+  defaultSettings: EditorSettings;
   classNames?: {
     container?: string;
   },
@@ -50,15 +26,7 @@ interface SettingsPanelProps {
 }
 
 export default function SettingsPanel(props: SettingsPanelProps) {
-  const [qMode, setQMode] = useQueryParam("mode", StringParam);
-  const [settings, setSettings] = useState<EditorSettings>(defaultSettings);
-
-  useEffect(function consumeQueryParams() {
-    if (qMode) {
-      setQMode(null);
-      setSettings((s) => ({ ...s, mode: qMode }));
-    }
-  }, []);
+  const [settings, setSettings] = useState<EditorSettings>(props.defaultSettings);
 
   return (
     <div className={settingsContainer}>
@@ -119,7 +87,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                   }));
                 }}
               />
-              {idx == settings.lineHighlights.length - 1 && (
+              {idx === settings.lineHighlights.length - 1 && (
                 <div className={itemGroupRow}>
                   <Button>
                     <Icon
@@ -128,7 +96,8 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                         setSettings((s) => ({
                           ...s,
                           lineHighlights: s.lineHighlights.concat({
-                            ...defaultSettings.lineHighlights[0],
+                            background: "black",
+                            range: null,
                             id: newHighlightId(),
                           }),
                         }));
@@ -203,7 +172,8 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                         setSettings((s) => ({
                           ...s,
                           folds: s.folds.concat({
-                            ...defaultSettings.folds[0],
+                            summary: null,
+                            range: null,
                             id: newFoldId(),
                           }),
                         }));

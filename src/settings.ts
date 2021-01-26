@@ -1,4 +1,5 @@
 import { Null, Record, String, Array, Boolean, Number, Static } from "runtypes";
+import uniqueId from "lodash/uniqueId";
 
 export const LineRange = Record({
     start: Number,
@@ -32,3 +33,28 @@ export const EditorSettings = Record({
 });
 
 export type EditorSettings = Static<typeof EditorSettings>;
+
+export const newFoldId = () => uniqueId("editor-fold-");
+
+export const newHighlightId = () => uniqueId("editor-highlight-");
+
+export const defaultSettings: EditorSettings = {
+    mode: "jsx",
+    theme: "monokai",
+    showLineNumbers: true,
+    lineHighlights: [
+      {
+        id: newHighlightId(),
+        background: "black",
+        range: null,
+      },
+    ],
+    folds: [
+      {
+        id: newFoldId(),
+        summary: null,
+        range: null,
+      },
+    ],
+  };
+  

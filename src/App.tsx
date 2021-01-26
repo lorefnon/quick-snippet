@@ -12,8 +12,8 @@ import "codemirror/theme/monokai.css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import PreviewDialog from "./PreviewDialog";
 import uniqueId from "lodash/uniqueId";
-import SettingsPanel, { defaultSettings } from "./SettingsPanel";
-import { EditorSettings } from "./settings";
+import SettingsPanel from "./SettingsPanel";
+import { defaultSettings, EditorSettings } from "./settings";
 import { extractHash } from "./utils/url";
 import PermalinkDialog from "./PermalinkDialog";
 import { applySettings } from "./utils/codemirror";
@@ -95,7 +95,7 @@ function App() {
     <Split style={{ height: "100%", width: "100%" }}>
       <div style={{ width: "calc(100% - 250px)" }}>{editor}</div>
       <div style={{ minWidth: "250px" }}>
-        <SettingsPanel onSubmit={(settings) => setSettings(settings)} />
+        <SettingsPanel defaultSettings={settings} onSubmit={(settings) => setSettings(settings)} />
       </div>
     </Split>
   ) : (

@@ -7,13 +7,11 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import { QueryParamProvider } from "use-query-params";
 
 ReactDOM.render(
+  // Blueprint has some usages that are not strict mode compatible
   // <React.StrictMode>
-  <QueryParamProvider>
-    <App />
-  </QueryParamProvider>,
+  <App />,
   // </React.StrictMode>,
   document.getElementById("root")
 );
