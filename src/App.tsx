@@ -34,6 +34,13 @@ const SettingsPanel = lazy(() => import("./SettingsPanel"));
 const PermalinkDialog = lazy(() => import("./PermalinkDialog"));
 
 const defaultCodeContent = `
+//    ___        _      _      ____        _                  _   
+//   / _ \\ _   _(_) ___| | __ / ___| _ __ (_)_ __  _ __   ___| |_ 
+//  | | | | | | | |/ __| |/ / \\___ \\| '_ \\| | '_ \\| '_ \\ / _ \\ __|
+//  | |_| | |_| | | (__|   <   ___) | | | | | |_) | |_) |  __/ |_ 
+//   \\__\\_\\\\__,_|_|\\___|_|\\_\\ |____/|_| |_|_| .__/| .__/ \\___|\\__|
+//                                          |_|   |_|             
+//
 // Enter code snippet here
 //
 // Change language, theme etc. through the Settings panel
@@ -47,11 +54,14 @@ function App() {
   const [settings, setSettings] = useState<EditorSettings>(defaultSettings);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const [settingsExpanded, setSettingsExpanded] = useState<boolean>(false);
+  const [pendingAction, setPendingAction] = useState<
+    "PERMALINK" | "EMBED" | null
+  >(null);
   const [activeDialog, setActiveDialog] = useState<
     "PERMALINK" | "EMBED" | null
   >(null);
 
-  useEffect(function consumeQueryParams() {
+  useEffect(function consumeUrlData() {
     const payload = extractHash();
     if (!payload) return;
     setContent(payload.code);
@@ -123,16 +133,12 @@ function App() {
     <Split style={{ height: "100%", width: "100%" }}>
       <div style={{ width: "calc(100% - 250px)" }}>{editor}</div>
       <div style={{ minWidth: "250px" }}>
-        <Suspense fallback={
-          <NonIdealState 
-            icon={
-              <Spinner />
-            }
-            title={"Loading..."}
-          />
-        }>
+        <Suspense
+          fallback={<NonIdealState icon={<Spinner />} title={"Loading..."} />}
+        >
           <SettingsPanel
             defaultSettings={settings}
+            onClose={() => setSettingsExpanded(false)}
             onSubmit={(settings) => setSettings(settings)}
           />
         </Suspense>
@@ -186,7 +192,13 @@ function App() {
             }}
           />
           <Button
-            icon={IconNames.INSERT}
+            icon={
+              pendingAction === "EMBED" ? (
+                <Spinner size={Spinner.SIZE_SMALL} />
+              ) : (
+                IconNames.INSERT
+              )
+            }
             text="Embed"
             intent={Intent.PRIMARY}
             style={{ marginRight: "0.5rem" }}
@@ -195,8 +207,10 @@ function App() {
                 ".CodeMirror"
               );
               if (!editorEl) return;
+              setPendingAction("EMBED");
               html2canvas(editorEl).then((canvas) => {
                 canvasRef.current = canvas;
+                setPendingAction(null);
                 setActiveDialog("EMBED");
               });
             }}
@@ -257,6 +271,10 @@ const editorContainer = cc([
       ".CodeMirror-scroll": {
         overflow: "visible !important",
       },
+      "textarea": {
+        height: "1px",
+        width: "1px"
+      }
     },
   }),
 ]);

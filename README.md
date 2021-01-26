@@ -8,7 +8,7 @@ In addition, you can:
 2. Highlight lines to which you want to draw attention
 3. Generate images for embedding in tweets, blogs etc.
 
-![Screenshot](./assets/screenshot.png)
+[![Screenshot](./assets/screenshot.png)](https://lorefnon.me/quick-snippet/)
 
 Thanks to the awesome codemirror editor, we support many themes and syntax highlighting for a large number of languages.
 

@@ -21,12 +21,14 @@ import {
   newHighlightId,
 } from "./settings";
 import { SketchPicker } from "react-color";
-import { Popover2 as Popover } from "@blueprintjs/popover2";
+import { Popover2 as Popover, Tooltip2, Classes as TooltipClasses } from "@blueprintjs/popover2";
+
 interface SettingsPanelProps {
   defaultSettings: EditorSettings;
   classNames?: {
     container?: string;
   };
+  onClose: () => void;
   onSubmit: (settings: EditorSettings) => void;
 }
 
@@ -37,7 +39,13 @@ export default function SettingsPanel(props: SettingsPanelProps) {
 
   return (
     <div className={settingsContainer}>
-      <div className={panelHeader}>Settings</div>
+      <div className={panelHeader}>
+        Settings
+        <div style={{flexGrow: 1}}/>
+        <Button minimal onClick={props.onClose}>
+          <Icon icon={IconNames.CROSS} />
+        </Button>
+      </div>
       <div className={settingsInnerContainer}>
         <div className={itemGroupRow}>
           <FormGroup label="Language" style={{ marginRight: "1rem" }}>
@@ -76,7 +84,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
           Show Line Numbers
         </Checkbox>
 
-        <Panel header={"Highlighted ranges"}>
+        <Panel defaultCollapsed header={"Highlighted ranges (" + getRangeContainerLength(settings.lineHighlights) + ")"}>
           {settings.lineHighlights.map((currentHighlightItem, idx) => (
             <div key={currentHighlightItem.id}>
               <div className={itemGroupRow}>
@@ -125,9 +133,16 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                           />
                         }
                       >
-                        <Button minimal>
-                          <Icon icon={IconNames.EYE_OPEN} />
-                        </Button>
+                        <Tooltip2 content="Highlight background color" className={TooltipClasses.TOOLTIP2_INDICATOR}>
+                          <Button
+                            minimal
+                            style={{
+                              backgroundColor: currentHighlightItem.background,
+                            }}
+                          >
+                            <Icon icon={IconNames.EYE_OPEN} />
+                          </Button>
+                        </Tooltip2>
                       </Popover>
                     }
                   />
@@ -175,7 +190,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
           ))}
         </Panel>
         <br />
-        <Panel header="Collapsed ranges">
+        <Panel defaultCollapsed header={"Collapsed ranges (" + getRangeContainerLength(settings.folds) + ")"}>
           {settings.folds.map((currentFoldItem, idx) => (
             <div key={currentFoldItem.id}>
               <div className={itemGroupRow}>
@@ -295,6 +310,10 @@ function parseRange(value: string): LineRange | null {
     }
   }
   return null;
+}
+
+function getRangeContainerLength(containers: { range?: LineRange | null }[]) {
+  return containers.filter(it => it.range).length;
 }
 
 const settingsContainer = cc([

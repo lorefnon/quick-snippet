@@ -9,14 +9,14 @@ export const HashPayload = Record({
 export type HashPayload = Static<typeof HashPayload>;
 
 export function encodeToHash(payload: HashPayload) {
-    return `#` + encodeURIComponent(JSON.stringify(payload));
+    return `#` + btoa(JSON.stringify(payload));
 }
 
 export function decodeFromHash(hash = window.location.hash) {
     const encoded = hash.slice(1);
     if (!encoded) return null;
     try {
-        const parsed = JSON.parse(decodeURIComponent(encoded));
+        const parsed = JSON.parse(atob(encoded));
         return HashPayload.check(parsed);
     } catch (e) {
         console.error(e);
