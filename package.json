@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "license": "GPL-3.0-or-later",
+  "author": {
+    "name": "lorefnon",
+    "url": "https://lorefnon.me",
+    "email": "lorefnon@gmail.com"
+  },
+  "homepage": "https://lorefnon.me/quick-snippet/",
   "dependencies": {
     "@blueprintjs/core": "^3.38.0",
     "@testing-library/jest-dom": "^5.11.4",

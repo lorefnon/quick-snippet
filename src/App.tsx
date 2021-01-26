@@ -21,7 +21,7 @@ import { applySettings } from "./utils/codemirror";
 const defaultCodeContent = `
 // Enter code snippet here
 //
-// and generate preview using the sidebar on the right
+// Change language, theme etc. through the Settings panel
 `;
 
 function App() {
