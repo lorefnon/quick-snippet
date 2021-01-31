@@ -20,8 +20,13 @@ export default function ItemList<TItem extends BaseItem>(
 ) {
   return (
     <>
-      {props.itemList.map((item, idx) =>
-        <div key={item.id}>
+      {props.itemList.map((item, idx) => (
+        <div
+          key={item.id}
+          style={{
+            marginBottom: "0.5rem"
+          }}
+        >
           <div className={itemGroupRow}>
             <div className={itemGroupControl}>{props.renderItem(item)}</div>
             {props.itemList.length > 1 && (
@@ -33,7 +38,12 @@ export default function ItemList<TItem extends BaseItem>(
             )}
           </div>
           {idx === props.itemList.length - 1 && (
-            <div className={itemGroupRow}>
+            <div style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              marginTop: "0.5rem"
+            }}>
               <Button>
                 <Icon
                   icon={IconNames.ADD}
@@ -47,7 +57,7 @@ export default function ItemList<TItem extends BaseItem>(
             </div>
           )}
         </div>
-      )}
+      ))}
     </>
   );
 }
@@ -56,6 +66,8 @@ export const itemGroupRow = style({
   display: "flex",
   flexDirection: "row",
   alignItems: "center",
+  clear: "both",
+  borderBottom:  "1px dotted #ddd"
 });
 
 export const itemGroupControl = style({

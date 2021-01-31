@@ -59,7 +59,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
         </Button>
       </div>
       <div className={settingsInnerContainer}>
-        <div className={itemGroupRow}>
+        <div className={itemGroupRow} style={{marginBottom: "0.5rem"}}>
           <FormGroup label="Language" style={{ marginRight: "1rem" }}>
             <LangSelect
               mode={settings.mode}
@@ -103,28 +103,42 @@ export default function SettingsPanel(props: SettingsPanelProps) {
           <ItemList
             itemList={settings.annotations}
             renderItem={(item) => (
-              <>
-                <FormGroup label={"Content (Basic HTML supported)"}>
-                  <TextArea
-                    style={{ width: "100%" }}
-                    rows={5}
-                    onChange={(e) => {
-                      import("sanitize-html").then(({ default: sanitize }) => {
-                        const content = sanitize(e.target.value);
-                        setSettings((prevSettings) => ({
-                          ...prevSettings,
-                          annotations: prevSettings.annotations.map((it) =>
-                            it.id === item.id
-                              ? { ...it, content }
-                              : it
-                          ),
-                        }))
-                      });
-                    }}
-                  />
-                </FormGroup>
-                <div className={itemGroupRow}>
-                  <FormGroup label="Position" style={{ marginRight: "1rem" }}>
+              <table style={{marginBottom: "0.5rem"}}>
+                <tr>
+                  <th colSpan={2} style={{ textAlign: "left"}}>
+                    <label htmlFor={`annotation-content-${item.id}`}>
+                      Content (Basic HTML supported)
+                    </label>
+                  </th>
+                </tr>
+                <tr>
+                  <td colSpan={2}>
+                    <TextArea
+                      style={{ width: "100%" }}
+                      rows={5}
+                      id={`annotation-content-${item.id}`}
+                      defaultValue={item.content ?? ""}
+                      onChange={(e) => {
+                        import("sanitize-html").then(
+                          ({ default: sanitize }) => {
+                            const content = sanitize(e.target.value);
+                            setSettings((prevSettings) => ({
+                              ...prevSettings,
+                              annotations: prevSettings.annotations.map((it) =>
+                                it.id === item.id ? { ...it, content } : it
+                              ),
+                            }));
+                          }
+                        );
+                      }}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <th style={{ textAlign: "right", paddingRight: "1rem"}}>
+                    <label>Position</label>
+                  </th>
+                  <td>
                     <Select
                       items={["before", "after"]}
                       itemRenderer={(item, itemProps) => (
@@ -148,8 +162,13 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                         rightIcon="double-caret-vertical"
                       />
                     </Select>
-                  </FormGroup>
-                  <FormGroup label={"Line"}>
+                  </td>
+                </tr>
+                <tr>
+                  <th style={{ textAlign: "right", paddingRight: "1rem"}}>
+                    <label>Line</label>
+                  </th>
+                  <td>
                     <InputGroup
                       type="number"
                       value={`${item.line ?? ""}`}
@@ -164,13 +183,13 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                         }));
                       }}
                     />
-                  </FormGroup>
-                </div>
-                <div className={itemGroupRow}>
-                  <FormGroup
-                    label={"Arrow Distance (From Left)"}
-                    style={{ marginRight: "1rem" }}
-                  >
+                  </td>
+                </tr>
+                <tr>
+                  <th style={{ textAlign: "right", paddingRight: "1rem"}}>
+                    <label>Arrow Distance (From Left)</label>
+                  </th>
+                  <td>
                     <InputGroup
                       value={`${item.arrowLeftShift ?? ""}`}
                       onChange={(e) => {
@@ -184,53 +203,60 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                         }));
                       }}
                     />
-                  </FormGroup>
-                  <Popover
-                    content={
-                      <SketchPicker
-                        color={item.color ?? undefined}
-                        styles={{
-                          default: {
-                            picker: {
-                              background: "rgb(102 113 121)",
+                  </td>
+                </tr>
+                <tr>
+                  <th style={{ textAlign: "right", paddingRight: "1rem"}}>
+                    <label>Color</label>
+                  </th>
+                  <td>
+                    <Popover
+                      content={
+                        <SketchPicker
+                          color={item.color ?? undefined}
+                          styles={{
+                            default: {
+                              picker: {
+                                background: "rgb(102 113 121)",
+                              },
                             },
-                          },
-                        }}
-                        onChangeComplete={(e) => {
-                          setSettings((prevSettings) => ({
-                            ...prevSettings,
-                            annotations: prevSettings.annotations.map(
-                              (annotation): Annotation =>
-                                annotation.id === item.id
-                                  ? { ...annotation, color: e.hex }
-                                  : annotation
-                            ),
-                          }));
-                        }}
-                      />
-                    }
-                  >
-                    <Tooltip
-                      content={<div>Highlight background color</div>}
-                      className={TooltipClasses.TOOLTIP2_INDICATOR}
+                          }}
+                          onChangeComplete={(e) => {
+                            setSettings((prevSettings) => ({
+                              ...prevSettings,
+                              annotations: prevSettings.annotations.map(
+                                (annotation): Annotation =>
+                                  annotation.id === item.id
+                                    ? { ...annotation, color: e.hex }
+                                    : annotation
+                              ),
+                            }));
+                          }}
+                        />
+                      }
                     >
-                      <Button
-                        icon={
-                          <span
-                            style={{
-                              backgroundColor: item.color ?? undefined,
-                              height: "16px",
-                              width: "16px",
-                              borderRadius: "4px"
-                            }}
-                          />
-                        }
-                        text="Color"
-                      />
-                    </Tooltip>
-                  </Popover>
-                </div>
-              </>
+                      <Tooltip
+                        content={<div>Highlight background color</div>}
+                        className={TooltipClasses.TOOLTIP2_INDICATOR}
+                      >
+                        <Button
+                          icon={
+                            <span
+                              style={{
+                                backgroundColor: item.color ?? undefined,
+                                height: "16px",
+                                width: "16px",
+                                borderRadius: "4px",
+                              }}
+                            />
+                          }
+                          text="Color"
+                        />
+                      </Tooltip>
+                    </Popover>
+                  </td>
+                </tr>
+              </table>
             )}
             onAdd={() => {
               setSettings((prevSettings) => ({
@@ -271,6 +297,9 @@ export default function SettingsPanel(props: SettingsPanelProps) {
             renderItem={(item) => (
               <InputGroup
                 placeholder="Eg, 1-2"
+                defaultValue={
+                  item.range ? `${item.range.start}-${item.range.end}` : ""
+                }
                 leftElement={<Tag minimal>Lines</Tag>}
                 style={{
                   marginBottom: "0.5rem",
@@ -366,6 +395,9 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                   style={{
                     marginBottom: "0.5rem",
                   }}
+                  defaultValue={
+                    item.range ? `${item.range.start}-${item.range.end}` : ""
+                  }
                   onChange={(e) => {
                     const { value } = e.target;
                     setSettings((s) => ({
@@ -380,7 +412,8 @@ export default function SettingsPanel(props: SettingsPanelProps) {
                 />
                 <InputGroup
                   leftElement={<Tag minimal>Summary</Tag>}
-                  placeholder="Eg, 1-2"
+                  placeholder="Eg, Copyright details"
+                  defaultValue={item.summary ?? ""}
                   style={{
                     marginBottom: "0.5rem",
                   }}

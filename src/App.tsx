@@ -60,6 +60,7 @@ function App() {
   const [activeDialog, setActiveDialog] = useState<
     "PERMALINK" | "EMBED" | null
   >(null);
+  const editorScrollRef = useRef<number | null>(null);
 
   useEffect(function consumeUrlData() {
     const payload = extractHash();
@@ -87,6 +88,7 @@ function App() {
       const { editor } = component;
       if (!editor) return;
       applySettings(editor, settings, setSettings);
+      editorContainerRef.current!.scrollTop = editorScrollRef.current ?? 0;
     },
     [settings]
   );
@@ -139,7 +141,10 @@ function App() {
           <SettingsPanel
             defaultSettings={settings}
             onClose={() => setSettingsExpanded(false)}
-            onSubmit={(settings) => setSettings(settings)}
+            onSubmit={(settings) => {
+              editorScrollRef.current = editorContainerRef.current?.scrollTop ?? 0;
+              setSettings(settings)
+            }}
           />
         </Suspense>
       </div>
