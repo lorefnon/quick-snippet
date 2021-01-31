@@ -176,7 +176,7 @@ function App() {
           <AnchorButton
             icon={IconNames.HOME}
             text="About"
-            href={"https://github.com/lorefnon/quick-snippet#quick-snippet"}
+            href={"https://github.com/lorefnon/quick-snippet#user-content-quick-snippet"}
             target="_blank"
           />
         </Navbar.Group>

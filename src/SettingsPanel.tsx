@@ -1,3 +1,4 @@
+import "@blueprintjs/popover2/lib/css/blueprint-popover2.css";
 import {
   Button,
   FormGroup,
@@ -5,9 +6,11 @@ import {
   InputGroup,
   Icon,
   Tag,
+  TextArea,
+  MenuItem,
 } from "@blueprintjs/core";
 import cc from "classcat";
-import { useState } from "react";
+import React, { useState } from "react";
 import LangSelect from "./LangSelect";
 import toNumber from "lodash/toNumber";
 import ThemeSelect from "./ThemeSelect";
@@ -17,11 +20,20 @@ import Panel, { panelHeader } from "./Panel";
 import {
   EditorSettings,
   LineRange,
+  Annotation,
+  newAnnotationId,
   newFoldId,
   newHighlightId,
 } from "./settings";
 import { SketchPicker } from "react-color";
-import { Popover2 as Popover, Tooltip2, Classes as TooltipClasses } from "@blueprintjs/popover2";
+import {
+  Popover2 as Popover,
+  Tooltip2 as Tooltip,
+  Classes as TooltipClasses,
+} from "@blueprintjs/popover2";
+import ItemList, { itemGroupRow } from "./ItemList";
+import { Select } from "@blueprintjs/select";
+import { capitalize } from "lodash";
 
 interface SettingsPanelProps {
   defaultSettings: EditorSettings;
@@ -41,7 +53,7 @@ export default function SettingsPanel(props: SettingsPanelProps) {
     <div className={settingsContainer}>
       <div className={panelHeader}>
         Settings
-        <div style={{flexGrow: 1}}/>
+        <div style={{ flexGrow: 1 }} />
         <Button minimal onClick={props.onClose}>
           <Icon icon={IconNames.CROSS} />
         </Button>
@@ -83,199 +95,328 @@ export default function SettingsPanel(props: SettingsPanelProps) {
         >
           Show Line Numbers
         </Checkbox>
-
-        <Panel defaultCollapsed header={"Highlighted ranges (" + getRangeContainerLength(settings.lineHighlights) + ")"}>
-          {settings.lineHighlights.map((currentHighlightItem, idx) => (
-            <div key={currentHighlightItem.id}>
-              <div className={itemGroupRow}>
-                <div className={itemGroupControl}>
-                  <InputGroup
-                    placeholder="Eg, 1-2"
-                    leftElement={<Tag minimal>Lines</Tag>}
-                    style={{
-                      marginBottom: "0.5rem",
-                    }}
+        <Panel
+          defaultCollapsed
+          header={"Annotations"}
+          style={{ marginBottom: "1rem" }}
+        >
+          <ItemList
+            itemList={settings.annotations}
+            renderItem={(item) => (
+              <>
+                <FormGroup label={"Content (Basic HTML supported)"}>
+                  <TextArea
+                    style={{ width: "100%" }}
+                    rows={5}
                     onChange={(e) => {
-                      const { value } = e.target;
-                      setSettings((prevSettings) => ({
-                        ...prevSettings,
-                        lineHighlights: prevSettings.lineHighlights.map(
-                          (hItem) =>
-                            hItem.id === currentHighlightItem.id
-                              ? { ...hItem, range: parseRange(value) }
-                              : hItem
-                        ),
-                      }));
+                      import("sanitize-html").then(({ default: sanitize }) => {
+                        const content = sanitize(e.target.value);
+                        setSettings((prevSettings) => ({
+                          ...prevSettings,
+                          annotations: prevSettings.annotations.map((it) =>
+                            it.id === item.id
+                              ? { ...it, content }
+                              : it
+                          ),
+                        }))
+                      });
                     }}
-                    rightElement={
-                      <Popover
-                        content={
-                          <SketchPicker
-                            color={currentHighlightItem.background}
-                            styles={{
-                              default: {
-                                picker: {
-                                  background: "rgb(102 113 121)",
-                                },
-                              },
-                            }}
-                            onChangeComplete={(e) => {
-                              setSettings((prevSettings) => ({
-                                ...prevSettings,
-                                lineHighlights: prevSettings.lineHighlights.map(
-                                  (hItem) =>
-                                    hItem.id === currentHighlightItem.id
-                                      ? { ...hItem, background: e.hex }
-                                      : hItem
-                                ),
-                              }));
+                  />
+                </FormGroup>
+                <div className={itemGroupRow}>
+                  <FormGroup label="Position" style={{ marginRight: "1rem" }}>
+                    <Select
+                      items={["before", "after"]}
+                      itemRenderer={(item, itemProps) => (
+                        <MenuItem
+                          key={item}
+                          text={capitalize(item)}
+                          onClick={itemProps.handleClick}
+                        />
+                      )}
+                      onItemSelect={(position: "before" | "after") => {
+                        setSettings((prevSettings) => ({
+                          ...prevSettings,
+                          annotations: prevSettings.annotations.map((it) =>
+                            it.id === item.id ? { ...it, position } : it
+                          ),
+                        }));
+                      }}
+                    >
+                      <Button
+                        text={item.position}
+                        rightIcon="double-caret-vertical"
+                      />
+                    </Select>
+                  </FormGroup>
+                  <FormGroup label={"Line"}>
+                    <InputGroup
+                      type="number"
+                      value={`${item.line ?? ""}`}
+                      onChange={(e) => {
+                        const line = toNumber(e.target.value);
+                        if (isNaN(line)) return;
+                        setSettings((prevSettings) => ({
+                          ...prevSettings,
+                          annotations: prevSettings.annotations.map((it) =>
+                            it.id === item.id ? { ...it, line } : it
+                          ),
+                        }));
+                      }}
+                    />
+                  </FormGroup>
+                </div>
+                <div className={itemGroupRow}>
+                  <FormGroup
+                    label={"Arrow Distance (From Left)"}
+                    style={{ marginRight: "1rem" }}
+                  >
+                    <InputGroup
+                      value={`${item.arrowLeftShift ?? ""}`}
+                      onChange={(e) => {
+                        setSettings((prevSettings) => ({
+                          ...prevSettings,
+                          annotations: prevSettings.annotations.map((it) =>
+                            it.id === item.id
+                              ? { ...it, arrowLeftShift: e.target.value }
+                              : it
+                          ),
+                        }));
+                      }}
+                    />
+                  </FormGroup>
+                  <Popover
+                    content={
+                      <SketchPicker
+                        color={item.color ?? undefined}
+                        styles={{
+                          default: {
+                            picker: {
+                              background: "rgb(102 113 121)",
+                            },
+                          },
+                        }}
+                        onChangeComplete={(e) => {
+                          setSettings((prevSettings) => ({
+                            ...prevSettings,
+                            annotations: prevSettings.annotations.map(
+                              (annotation): Annotation =>
+                                annotation.id === item.id
+                                  ? { ...annotation, color: e.hex }
+                                  : annotation
+                            ),
+                          }));
+                        }}
+                      />
+                    }
+                  >
+                    <Tooltip
+                      content={<div>Highlight background color</div>}
+                      className={TooltipClasses.TOOLTIP2_INDICATOR}
+                    >
+                      <Button
+                        icon={
+                          <span
+                            style={{
+                              backgroundColor: item.color ?? undefined,
+                              height: "16px",
+                              width: "16px",
+                              borderRadius: "4px"
                             }}
                           />
                         }
-                      >
-                        <Tooltip2 content="Highlight background color" className={TooltipClasses.TOOLTIP2_INDICATOR}>
-                          <Button
-                            minimal
-                            style={{
-                              backgroundColor: currentHighlightItem.background,
-                            }}
-                          >
-                            <Icon icon={IconNames.EYE_OPEN} />
-                          </Button>
-                        </Tooltip2>
-                      </Popover>
+                        text="Color"
+                      />
+                    </Tooltip>
+                  </Popover>
+                </div>
+              </>
+            )}
+            onAdd={() => {
+              setSettings((prevSettings) => ({
+                ...prevSettings,
+                annotations: prevSettings.annotations.concat({
+                  id: newAnnotationId(),
+                  position: "after",
+                  line: null,
+                  content: null,
+                  arrowLeftShift: null,
+                  color: null,
+                }),
+              }));
+            }}
+            onRemove={(id) => {
+              setSettings((prevSettings) => ({
+                ...prevSettings,
+                annotations: prevSettings.annotations.filter(
+                  (it) => it.id !== id
+                ),
+              }));
+            }}
+          />
+        </Panel>
+        <Panel
+          defaultCollapsed
+          header={
+            "Highlighted ranges (" +
+            getRangeContainerLength(settings.lineHighlights) +
+            ")"
+          }
+        >
+          <ItemList
+            itemList={settings.lineHighlights}
+            helpText={
+              <small className={subText}>(Both ends are inclusive)</small>
+            }
+            renderItem={(item) => (
+              <InputGroup
+                placeholder="Eg, 1-2"
+                leftElement={<Tag minimal>Lines</Tag>}
+                style={{
+                  marginBottom: "0.5rem",
+                }}
+                onChange={(e) => {
+                  const { value } = e.target;
+                  setSettings((prevSettings) => ({
+                    ...prevSettings,
+                    lineHighlights: prevSettings.lineHighlights.map((hItem) =>
+                      hItem.id === item.id
+                        ? { ...hItem, range: parseRange(value) }
+                        : hItem
+                    ),
+                  }));
+                }}
+                rightElement={
+                  <Popover
+                    content={
+                      <SketchPicker
+                        color={item.background}
+                        styles={{
+                          default: {
+                            picker: {
+                              background: "rgb(102 113 121)",
+                            },
+                          },
+                        }}
+                        onChangeComplete={(e) => {
+                          setSettings((prevSettings) => ({
+                            ...prevSettings,
+                            lineHighlights: prevSettings.lineHighlights.map(
+                              (hItem) =>
+                                hItem.id === item.id
+                                  ? { ...hItem, background: e.hex }
+                                  : hItem
+                            ),
+                          }));
+                        }}
+                      />
                     }
-                  />
-                </div>
-                {settings.lineHighlights.length > 1 && (
-                  <div className={itemGroupCloser}>
-                    <Button
-                      minimal
-                      onClick={() => {
-                        setSettings((prevSettings) => ({
-                          ...prevSettings,
-                          lineHighlights: prevSettings.lineHighlights.filter(
-                            (item) => item.id !== currentHighlightItem.id
-                          ),
-                        }));
-                      }}
+                  >
+                    <Tooltip
+                      content={<div>Annotation theme color</div>}
+                      className={TooltipClasses.TOOLTIP2_INDICATOR}
                     >
-                      <Icon icon={IconNames.CROSS} />
-                    </Button>
-                  </div>
-                )}
-              </div>
-              {idx === settings.lineHighlights.length - 1 && (
-                <div className={itemGroupRow}>
-                  <Button>
-                    <Icon
-                      icon={IconNames.ADD}
-                      onClick={() => {
-                        setSettings((s) => ({
-                          ...s,
-                          lineHighlights: s.lineHighlights.concat({
-                            background: "black",
-                            range: null,
-                            id: newHighlightId(),
-                          }),
-                        }));
-                      }}
-                    />
-                  </Button>
-                  <div style={{ flexGrow: 1 }} />
-                  <small className={subText}>(Both ends are inclusive)</small>
-                </div>
-              )}
-            </div>
-          ))}
+                      <Button
+                        minimal
+                        style={{
+                          backgroundColor: item.background,
+                        }}
+                      >
+                        <Icon icon={IconNames.EYE_OPEN} />
+                      </Button>
+                    </Tooltip>
+                  </Popover>
+                }
+              />
+            )}
+            onAdd={() => {
+              setSettings((s) => ({
+                ...s,
+                lineHighlights: s.lineHighlights.concat({
+                  background: "black",
+                  range: null,
+                  id: newHighlightId(),
+                }),
+              }));
+            }}
+            onRemove={(id) => {
+              setSettings((prevSettings) => ({
+                ...prevSettings,
+                lineHighlights: prevSettings.lineHighlights.filter(
+                  (item) => item.id !== id
+                ),
+              }));
+            }}
+          />
         </Panel>
         <br />
-        <Panel defaultCollapsed header={"Collapsed ranges (" + getRangeContainerLength(settings.folds) + ")"}>
-          {settings.folds.map((currentFoldItem, idx) => (
-            <div key={currentFoldItem.id}>
-              <div className={itemGroupRow}>
-                <div className={itemGroupControl}>
-                  <InputGroup
-                    placeholder="Eg, 1-2"
-                    leftElement={<Tag minimal>Lines</Tag>}
-                    style={{
-                      marginBottom: "0.5rem",
-                    }}
-                    onChange={(e) => {
-                      const { value } = e.target;
-                      setSettings((s) => ({
-                        ...s,
-                        folds: s.folds.map((foldItem) =>
-                          foldItem.id === currentFoldItem.id
-                            ? { ...foldItem, range: parseRange(value) }
-                            : foldItem
-                        ),
-                      }));
-                    }}
-                  />
-                  <InputGroup
-                    leftElement={<Tag minimal>Summary</Tag>}
-                    placeholder="Eg, 1-2"
-                    style={{
-                      marginBottom: "0.5rem",
-                    }}
-                    onChange={(e) => {
-                      const { value } = e.target;
-                      setSettings((s) => ({
-                        ...s,
-                        folds: s.folds.map((foldItem) =>
-                          foldItem.id === currentFoldItem.id
-                            ? { ...foldItem, summary: value }
-                            : foldItem
-                        ),
-                      }));
-                    }}
-                  />
-                </div>
-                {settings.folds.length > 1 && (
-                  <div className={itemGroupCloser}>
-                    <Button
-                      minimal
-                      onClick={() => {
-                        setSettings((prevSettings) => ({
-                          ...prevSettings,
-                          folds: prevSettings.folds.filter(
-                            (foldItem) => foldItem.id !== currentFoldItem.id
-                          ),
-                        }));
-                      }}
-                    >
-                      <Icon icon={IconNames.CROSS} />
-                    </Button>
-                  </div>
-                )}
-              </div>
-              {idx < settings.folds.length - 1 && (
-                <div className={formGroupSeparator} />
-              )}
-              {idx === settings.folds.length - 1 && (
-                <div className={itemGroupRow}>
-                  <Button>
-                    <Icon
-                      icon={IconNames.ADD}
-                      onClick={() => {
-                        setSettings((prevSettings) => ({
-                          ...prevSettings,
-                          folds: prevSettings.folds.concat({
-                            summary: null,
-                            range: null,
-                            id: newFoldId(),
-                          }),
-                        }));
-                      }}
-                    />
-                  </Button>
-                  <div style={{ flexGrow: 1 }} />
-                  <small className={subText}>(Both ends are inclusive)</small>
-                </div>
-              )}
-            </div>
-          ))}
+        <Panel
+          defaultCollapsed
+          header={
+            "Collapsed ranges (" + getRangeContainerLength(settings.folds) + ")"
+          }
+        >
+          <ItemList
+            itemList={settings.folds}
+            renderItem={(item) => (
+              <>
+                <InputGroup
+                  placeholder="Eg, 1-2"
+                  leftElement={<Tag minimal>Lines</Tag>}
+                  style={{
+                    marginBottom: "0.5rem",
+                  }}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    setSettings((s) => ({
+                      ...s,
+                      folds: s.folds.map((foldItem) =>
+                        foldItem.id === item.id
+                          ? { ...foldItem, range: parseRange(value) }
+                          : foldItem
+                      ),
+                    }));
+                  }}
+                />
+                <InputGroup
+                  leftElement={<Tag minimal>Summary</Tag>}
+                  placeholder="Eg, 1-2"
+                  style={{
+                    marginBottom: "0.5rem",
+                  }}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    setSettings((s) => ({
+                      ...s,
+                      folds: s.folds.map((foldItem) =>
+                        foldItem.id === item.id
+                          ? { ...foldItem, summary: value }
+                          : foldItem
+                      ),
+                    }));
+                  }}
+                />
+              </>
+            )}
+            onRemove={(id) => {
+              setSettings((prevSettings) => ({
+                ...prevSettings,
+                folds: prevSettings.folds.filter(
+                  (foldItem) => foldItem.id !== id
+                ),
+              }));
+            }}
+            onAdd={() => {
+              setSettings((prevSettings) => ({
+                ...prevSettings,
+                folds: prevSettings.folds.concat({
+                  summary: null,
+                  range: null,
+                  id: newFoldId(),
+                }),
+              }));
+            }}
+          />
         </Panel>
         <br />
         <div style={{ display: "flex", flexDirection: "row" }}>
@@ -313,7 +454,7 @@ function parseRange(value: string): LineRange | null {
 }
 
 function getRangeContainerLength(containers: { range?: LineRange | null }[]) {
-  return containers.filter(it => it.range).length;
+  return containers.filter((it) => it.range).length;
 }
 
 const settingsContainer = cc([
@@ -332,31 +473,6 @@ const settingsInnerContainer = style({
   padding: "1rem",
   flexGrow: 1,
   flexShrink: 1,
-});
-
-const formGroupSeparator = style({
-  marginBottom: "0.5rem",
-  borderTop: "1px dotted rgba(255, 255, 255, 0.3)",
-  height: 0,
-});
-
-const itemGroupRow = style({
-  display: "flex",
-  flexDirection: "row",
-  alignItems: "center",
-});
-
-const itemGroupControl = style({
-  flexGrow: 1,
-  flexShrink: 1,
-});
-
-const itemGroupCloser = style({
-  flexGrow: 0,
-  flexShrink: 0,
-  borderLeft: "1px solid rgba(255, 255, 255, 0.3)",
-  marginLeft: "0.5rem",
-  marginBottom: "0.5rem",
 });
 
 const subText = style({

@@ -1,5 +1,7 @@
 import { style } from "typestyle";
+import cc from "classcat";
 import { EditorSettings } from "../settings";
+import { toNumber } from "lodash";
 
 export function applySettings(
     editor: CodeMirror.Editor, 
@@ -42,6 +44,42 @@ export function applySettings(
             ${end - start + 1} lines collapsed ${summary}
             </div>`;
     }
+    for (const entry of settings.annotations) {
+        if (!entry.line || !entry.content) continue;
+        const widgetNode = document.createElement("div");
+        widgetNode.setAttribute("class", cc(["annotation-widget", widgetAnnotation]));
+        doc.addLineWidget(entry.line-1, widgetNode, {
+            above: entry.position === "before"
+        });
+        let left = entry.arrowLeftShift?.trim();
+        if (!left) {
+            left = "10px";
+        } else {
+            const leftNum = toNumber(left);
+            if (!isNaN(leftNum)) left = `${leftNum}px`;
+        }
+        widgetNode.innerHTML = `
+            <div style="
+                border-top: 2px solid ${entry.color ?? "black"};
+                border-bottom: 2px solid ${entry.color ?? "black"};
+                background: ${entry.color ?? "gray"};
+                margin: 0.5rem 0;
+                position: relative;">
+                    <div style="
+                        width: 0;
+                        position: absolute;
+                        ${entry.position === "before" ? "bottom": "top"}: -14px;
+                        left: ${left};
+                        border: 6px solid transparent;
+                        border-${entry.position === "before" ? "top": "bottom"}: 6px solid ${entry.color ?? "black"};">
+                    </div>
+                    <div style="
+                        background: rgba(0,0,0,0.5);
+                        padding: 1rem 0.5rem;">
+                        ${entry.content}
+                    </div>
+            </div>`;
+    }
 }
 
 
@@ -76,4 +114,8 @@ const widgetContainer = style({
     position: "relative",
     paddingLeft: "1rem",
     cursor: "pointer"
+});
+
+const widgetAnnotation = style({
+    position: "relative"
 });

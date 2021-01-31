@@ -36,7 +36,7 @@ export default function PreviewDialog(props: PreviewPopupProps) {
       return `[${img}](${getPermalink({
         code: props.code,
         settings: props.settings,
-      })}`;
+      })})`;
     return img;
   }, [includePermalinkInMd, dataURI, props.settings, props.code]);
 
